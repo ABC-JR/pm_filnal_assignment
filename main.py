@@ -1,0 +1,35 @@
+from fastapi import FastAPI
+
+import uvicorn
+
+from models.base import Base
+
+from routes import auth, music
+from database.database import engine
+from fastapi.middleware.cors import CORSMiddleware
+
+
+app =FastAPI()
+app.include_router(auth.router ,prefix="/auth")
+app.include_router(music.router ,prefix="/music") 
+
+app.add_middleware(
+    CORSMiddleware ,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+
+)
+
+
+
+
+
+
+Base.metadata.create_all(bind=engine)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+    
+
+
