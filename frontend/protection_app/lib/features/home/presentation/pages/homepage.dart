@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:first_video/core/utils/pickers.dart';
 import 'package:first_video/features/home/data/model/spam_response.dart';
 import 'package:first_video/features/home/data/repository/spam_repository.dart';
+import 'package:first_video/features/home/domain/chat.dart';
 import 'package:first_video/features/home/domain/model/responce_msg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
@@ -18,19 +24,48 @@ class _HomepageState extends ConsumerState<Homepage> {
   var message = TextEditingController();
   var formkey = GlobalKey<FormState>();
 
-  List<ResponceMsg> rmessages = [
-    ResponceMsg(
-      spamResponse: SpamResponse(
-        verdict: "Spam",
-        confidence: 95,
-        score: 95,
-        reasons: ["Contains suspicious links", "Unsolicited offer"],
-        summary: "This message is likely to be spam.",
-      ),
-      message:
-          "Congratulations! You've won a free vacation to the Bahamas! Click here to claim your prize.",
-    ),
-  ];
+  late List<ResponceMsg> rmessages;
+
+
+  File? selectedAudio;
+
+  final chatsBox = Hive.box<Chat>('chats');
+  var current_chat = Chat(id: 'default', message: 'Default Chat');
+
+  Box<ResponceMsg> get box {
+    // Create a unique box for each chat
+    try {
+      return Hive.box<ResponceMsg>('chat_${current_chat.id}');
+    } catch (e) {
+      // Box doesn't exist yet, return default
+      return Hive.box<ResponceMsg>('chatBox');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Load messages for current chat
+    _loadMessages();
+    // If no chats exist, create a default one
+    if (chatsBox.isEmpty) {
+      chatsBox.add(current_chat);
+    }
+  }
+
+  void _loadMessages() {
+    try {
+      final chatBox = Hive.box<ResponceMsg>('chat_${current_chat.id}');
+      setState(() {
+        rmessages = chatBox.values.toList();
+      });
+    } catch (e) {
+      setState(() {
+        rmessages = [];
+      });
+    }
+  }
+
   String buildAiAnalysis(SpamResponse res) {
     return '''
 AI Analysis Report
@@ -58,6 +93,59 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        child: ListView.builder(
+          itemCount: chatsBox.length + 1, // +1 для кнопки
+          itemBuilder: (context, index) {
+            // 🟢 КНОПКА СОЗДАНИЯ ЧАТА (первый элемент)
+            if (index == 0) {
+              return ListTile(
+                leading: Icon(Icons.add, color: Colors.blue),
+                title: Text(
+                  "Start New Chat",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onTap: () {
+                  final newChat = Chat(
+                    id: DateTime.now().toIso8601String(),
+                    message: "Chat ${chatsBox.length + 1}",
+                  );
+
+                  chatsBox.add(newChat);
+                  current_chat = newChat;
+
+                  _loadMessages();
+                  Navigator.pop(context);
+                },
+              );
+            }
+
+            // 📦 Обычные чаты
+            final chat = chatsBox.getAt(index - 1)!;
+
+            return ListTile(
+              leading: CircleAvatar(child: Text(chat.message[0].toUpperCase())),
+
+              title: Text(
+                chat.message,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              tileColor: current_chat == chat
+                  ? Colors.blue.withOpacity(0.1)
+                  : null,
+
+              onTap: () {
+                current_chat = chat;
+                _loadMessages();
+                Navigator.pop(context);
+              },
+            );
+          },
+        ),
+      ),
+
       appBar: AppBar(
         title: const Text(
           'Spam Detection App',
@@ -111,7 +199,6 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
                                   ),
                                 ),
                               ),
-
                               Container(
                                 alignment: Alignment.centerLeft,
                                 padding: EdgeInsets.all(10),
@@ -141,10 +228,11 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
                                       buildAiAnalysis(
                                         rmessages[index].spamResponse,
                                       ),
-                                      style: TextStyle(fontSize: 18 , 
-                                      fontStyle: FontStyle.italic , 
-                                      // fontWeight: FontWeight.w600
-                                      
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontStyle: FontStyle.italic,
+
+                                        // fontWeight: FontWeight.w600
                                       ),
                                     ),
                                     SizedBox(
@@ -187,11 +275,61 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
                                     SizedBox(height: 10),
 
                                     Text(
-                                      "Recommendation:\nUsers are strongly advised to exercise caution when interacting with this message. \nAvoid clicking unknown links, sharing sensitive information, or engaging with suspicious content. \n\nSummary:\n${rmessages[index].spamResponse.summary}" , 
+                                      "Recommendation:\nUsers are strongly advised to exercise caution when interacting with this message. \nAvoid clicking unknown links, sharing sensitive information, or engaging with suspicious content. \n\nSummary:\n${rmessages[index].spamResponse.summary}",
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontStyle: FontStyle.italic,
                                       ),
+                                    ),
+
+                                    Divider(
+                                      thickness: 1,
+                                      color: Colors.grey[300],
+                                    ),
+
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              rmessages[index].userFeedback =
+                                                  rmessages[index]
+                                                          .userFeedback ==
+                                                      true
+                                                  ? null
+                                                  : true;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            Icons.thumb_up,
+                                            color:
+                                                rmessages[index].userFeedback ==
+                                                    true
+                                                ? Colors.green
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              rmessages[index].userFeedback =
+                                                  rmessages[index]
+                                                          .userFeedback ==
+                                                      false
+                                                  ? null
+                                                  : false;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            Icons.thumb_down,
+                                            color:
+                                                rmessages[index].userFeedback ==
+                                                    false
+                                                ? Colors.red
+                                                : Colors.grey,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -220,7 +358,7 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            message.text.isEmpty ? Icons.mic : Icons.send,
+                            message.text.isEmpty ? Icons.music_video_rounded : Icons.send,
                           ),
                           onPressed: () async {
                             if (message.text.isNotEmpty) {
@@ -228,16 +366,77 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
                                 dio: Dio(),
                               ).checkSpam(message.text);
 
+                              // Ensure chat box exists
+                              try {
+                                await Hive.openBox<ResponceMsg>(
+                                  'chat_${current_chat.id}',
+                                );
+                              } catch (e) {
+                                // Box already open
+                              }
+
+                              // Add message to current chat box
+                              await box.add(
+                                ResponceMsg(
+                                  message: message.text,
+                                  spamResponse: spamResponse,
+                                ),
+                              );
+
                               setState(() {
                                 rmessages.add(
                                   ResponceMsg(
-                                    spamResponse: spamResponse,
                                     message: message.text,
+                                    spamResponse: spamResponse,
                                   ),
                                 );
                                 message.clear();
                               });
                             }
+                            else{
+                              final pickedAudio = await pickAudio();
+
+                              if (pickedAudio != null) {
+                                final savedAudio = await saveFilePermanently(pickedAudio.path);
+
+                                setState(() {
+                                  selectedAudio = savedAudio;
+                                });
+
+                                var spamResponse = await SpamRepository(
+                                  dio: Dio(),
+                                ).checkSpamMicro(savedAudio);
+
+                                // Ensure chat box exists
+                                try {
+                                  await Hive.openBox<ResponceMsg>(
+                                    'chat_${current_chat.id}',
+                                  );
+                                } catch (e) {
+                                  // Box already open
+                                }
+
+                                // Add message to current chat box
+                                await box.add(
+                                  ResponceMsg(
+                                    message: "[Audio Message]",
+                                    spamResponse: spamResponse,
+                                  ),
+                                );
+
+                                setState(() {
+                                  rmessages.add(
+                                    ResponceMsg(
+                                      message: "[Audio Message]",
+                                      spamResponse: spamResponse,
+                                    ),
+                                  );
+                                  message.clear();
+                                });
+                              }
+                            }
+
+
                           },
                         ),
                       ),
@@ -250,5 +449,27 @@ Higher scores typically indicate increased risk and reduced trustworthiness.
         ),
       ),
     );
+  }
+
+
+  void _selectFile() async {
+    final pickedAudio = await pickAudio();
+
+    if (pickedAudio != null) {
+      final savedAudio = await saveFilePermanently(pickedAudio.path);
+
+      setState(() {
+        selectedAudio = savedAudio;
+      });
+    }
+  }
+
+
+  Future<File> saveFilePermanently(String path) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final name = path.split('/').last;
+    final newFile = File('${directory.path}/$name');
+
+    return File(path).copy(newFile.path);
   }
 }

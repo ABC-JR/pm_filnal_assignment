@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:first_video/core/network/api.dart';
 import 'package:first_video/features/home/data/model/retrain.dart';
@@ -9,13 +11,23 @@ class SpamRepository {
   final Dio dio;
   
 
-  SpamRepository({required this.dio});
+  SpamRepository({required this.dio}) {
+    // Configure timeout - increased to 60 seconds
+    dio.options.connectTimeout = const Duration(seconds: 60);
+    dio.options.receiveTimeout = const Duration(seconds: 60);
+    dio.options.sendTimeout = const Duration(seconds: 60);
+  }
 
   Future<SpamResponse> checkSpam(String message) async {
     try {
        final response = await dio.post(
         Api.baseUrl + '/check/spam',
         data: {'text': message},
+        options: Options(
+          connectTimeout: const Duration(seconds: 120),
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 120),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -30,6 +42,8 @@ class SpamRepository {
         throw Exception('Failed to check spam: ${response.statusCode}');
       }
     } catch (e) {
+      print('Detailed error: $e');
+      print('Backend URL: ${Api.baseUrl}');
       throw Exception('Error checking spam: $e');
     }
   }
@@ -102,4 +116,54 @@ class SpamRepository {
       throw Exception('Error getting model status: $e');
     }
   }
+
+
+    Future<SpamResponse> checkSpamMicro(File audiofile) async {
+    try {
+
+
+
+       final response = await dio.post(
+        Api.baseUrl + '/file/toText',
+        data: {'audio': audiofile},
+        options: Options(
+          connectTimeout: const Duration(seconds: 360),
+          receiveTimeout: const Duration(seconds: 360),
+          sendTimeout: const Duration(seconds: 360),
+        ),
+
+      );
+
+      final checkspam  =  await dio.post(
+        Api.baseUrl + '/check/spam',
+        data: {'text': response},
+        options: Options(
+          connectTimeout: const Duration(seconds: 120),
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 120),
+        ),
+      );
+      
+
+      if (checkspam.statusCode == 200) {
+        return SpamResponse(
+          verdict: checkspam.data['verdict'],
+          confidence: checkspam.data['confidence'],
+          score: checkspam.data['score'],
+          reasons: List<String>.from(checkspam.data['reasons']),
+          summary: checkspam.data['summary'],
+        );
+      } else {
+        throw Exception('Failed to check spam: ${checkspam.statusCode}');
+      }
+    } catch (e) {
+      print('Detailed error: $e');
+      print('Backend URL: ${Api.baseUrl}');
+      throw Exception('Error checking spam: $e');
+    }
+  }
+
+
+
+  
 }

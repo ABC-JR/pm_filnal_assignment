@@ -38,10 +38,6 @@ class _SignInPagesState extends ConsumerState<SignInPages> {
   final isLoading = ref.watch(authViewmodelProvider.select((value) => value?.isLoading == true));
 
 
-  final state = ref.watch(authViewmodelProvider);
-  final isLoading2 = state?.isLoading ?? false;
-
-
 
 
     ref.listen(

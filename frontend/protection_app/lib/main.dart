@@ -1,8 +1,10 @@
 
 import 'package:first_video/core/theme/theme.dart';
 
-import 'package:first_video/features/auth/presentation/pages/sign_in_pages.dart';
 import 'package:first_video/features/auth/viewmodel/auth_viewmodel.dart';
+import 'package:first_video/features/home/data/model/spam_response.dart';
+import 'package:first_video/features/home/domain/chat.dart';
+import 'package:first_video/features/home/domain/model/responce_msg.dart';
 import 'package:first_video/features/home/presentation/pages/homepage.dart';
 
 
@@ -30,6 +32,13 @@ void main() async {
   final notifier = container.read(authViewmodelProvider.notifier);
   await notifier.initSharedPreferences();
   final usermdeo = await notifier.getcurrenuser();
+
+  Hive.registerAdapter(SpamResponseAdapter());
+  Hive.registerAdapter(ResponceMsgAdapter());
+  Hive.registerAdapter(ChatAdapter());
+
+  await Hive.openBox<ResponceMsg>('chatBox');
+  await Hive.openBox<Chat>('chats');
 
   print(usermdeo);
   

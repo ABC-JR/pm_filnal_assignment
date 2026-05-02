@@ -17,7 +17,7 @@ app.include_router(auth.router ,prefix="/auth")
 
 app.include_router(cheker.router , prefix="/check")
 
-app.include_router(retrain.router  , prefix="/retrain")
+# app.include_router(retrain.router  , prefix="/retrain")
 app.include_router(file.router  , prefix="/file")
 
 app.add_middleware(
@@ -28,12 +28,7 @@ app.add_middleware(
 )
 
 
-
-
-
-
 Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
