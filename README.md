@@ -23,11 +23,6 @@ git clone https://github.com/ABC-JR/pm_filnal_assignment.git
 cd fraud-protection-system
 
 
-After running the program, the system will analyze input data (such as phone numbers or activity logs) and provide alerts if suspicious behavior is detected.
-
-
-
-
 ## 📂 Project Structure
 
 ```
