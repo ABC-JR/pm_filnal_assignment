@@ -33,10 +33,10 @@ src/        # Core source code
 
 ## Screenshots
 
-![App Screenshot](screen/first.jpg)
-![App Screenshot](screen/second.jpg)
-![App Screenshot](screen/third.jpg)
-![App Screenshot](screen/foruth.jpg)
+![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/first.jpg)
+![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/second.jpg)
+![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/third.jpg)
+![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/foruth.jpg)
 ## 🎯 Future Improvements
 
 * Real-time fraud detection using AI
