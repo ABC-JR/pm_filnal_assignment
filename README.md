@@ -29,7 +29,6 @@ cd fraud-protection-system
 src/        # Core source code
 docs/       # Documentation
 tests/      # Test cases
-assets/     # Images and screenshots
 ```
 
 ## 🎯 Future Improvements
