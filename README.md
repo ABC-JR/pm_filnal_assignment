@@ -25,11 +25,7 @@ cd fraud-protection-system
 
 After running the program, the system will analyze input data (such as phone numbers or activity logs) and provide alerts if suspicious behavior is detected.
 
-## 🖼️ Screenshots
 
-(Add screenshots here if available)
-
-## 🛠️ Tech Stack
 
 
 ## 📂 Project Structure
@@ -51,6 +47,5 @@ assets/     # Images and screenshots
 ## 👤 Author
 
 Baglanbek Aglanbek
-Aidyn 
-Beibarys
+
 
