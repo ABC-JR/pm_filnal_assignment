@@ -27,10 +27,16 @@ cd fraud-protection-system
 
 ```
 src/        # Core source code
-docs/       # Documentation
-tests/      # Test cases
 ```
 
+
+
+## Screenshots
+
+![App Screenshot](screen/first.jpg)
+![App Screenshot](screen/second.jpg)
+![App Screenshot](screen/third.jpg)
+![App Screenshot](screen/foruth.jpg)
 ## 🎯 Future Improvements
 
 * Real-time fraud detection using AI
