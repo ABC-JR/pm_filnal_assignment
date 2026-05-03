@@ -1,5 +1,6 @@
 
 import 'package:first_video/core/theme/theme.dart';
+import 'package:first_video/features/auth/presentation/pages/sign_in_pages.dart';
 
 import 'package:first_video/features/auth/viewmodel/auth_viewmodel.dart';
 import 'package:first_video/features/home/data/model/spam_response.dart';
@@ -61,14 +62,9 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Spotify clone',
+      title: '',
       theme: AppTheme.darkthemode,
-      home: current_user?.maybeWhen(
-        data: (user) => Homepage(),
-        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        error: (err, stack) => Homepage(),
-        orElse: () => Homepage(),
-      ) ?? Homepage(),
+      home: current_user == null ? const SignInPages() : const Homepage(),
     );
   }
 }

@@ -32,7 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       var responce = await dio.post(
-        Api.baseUrl + '/auth/login',
+        Api.newurl + '/auth/login',
         data: {'email': email, 'password': password},
       );
 
@@ -67,7 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       var responce = await dio.post(
-        Api.baseUrl + '/auth/signup',
+        Api.newurl + '/auth/signup',
         data: {'email': email, 'password': password, 'name': name},
       );
 
@@ -92,7 +92,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User?>> getCurrentUser(String token) async {
     try {
       var responce = await dio.get(
-        Api.baseUrl + '/auth',
+        Api.newurl + '/auth/',
         options: Options(headers: {'x-auth-token': token}),
       );
 

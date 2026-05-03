@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -9,7 +8,6 @@ import 'package:first_video/features/home/data/model/spam_response.dart';
 
 class SpamRepository {
   final Dio dio;
-  
 
   SpamRepository({required this.dio}) {
     // Configure timeout - increased to 60 seconds
@@ -20,8 +18,8 @@ class SpamRepository {
 
   Future<SpamResponse> checkSpam(String message) async {
     try {
-       final response = await dio.post(
-        Api.baseUrl + '/check/spam',
+      final response = await dio.post(
+        Api.newurl + '/check/spam',
         data: {'text': message},
         options: Options(
           connectTimeout: const Duration(seconds: 120),
@@ -48,19 +46,17 @@ class SpamRepository {
     }
   }
 
-
-
-  Future<List<SpamResponse>> checkMultipleMessages(List<String> messages) async {
+  Future<List<SpamResponse>> checkMultipleMessages(
+    List<String> messages,
+  ) async {
     try {
       final response = await dio.post(
-        Api.baseUrl + '/check/spam/batch',
+        Api.newurl + '/check/spam/batch',
         data: {'texts': messages},
       );
-      var final_response = response.data['results']; 
+      var final_response = response.data['results'];
 
       if (response.statusCode == 200) {
-       
-
         return (final_response as List).map((item) {
           return SpamResponse(
             verdict: item['verdict'],
@@ -78,15 +74,25 @@ class SpamRepository {
     }
   }
 
-
-  Future<Retrain> retrain(String text , bool isSpam) async {
+  Future<Retrain> retrain(String text, bool isSpam) async {
     try {
       final response = await dio.post(
-        Api.baseUrl + '/retrain/spam/feedback',
+        Api.newurl + '/retrain/spam/feedback',
         data: {'text': text, 'is_spam': isSpam},
       );
 
-      if (response.statusCode == 200) {
+      final trainresponce = await dio.post(
+        Api.newurl + '/retrain/spam/retrain',
+        options: Options(
+          connectTimeout: const Duration(seconds: 360),
+          receiveTimeout: const Duration(seconds: 360),
+          sendTimeout: const Duration(seconds: 360),
+        ),
+      );
+
+      if (response.statusCode == 200 && trainresponce.statusCode == 200) {
+        print('Retrain response: ${response.data}'); // Debugging line
+
         return Retrain(
           status: response.data['status'],
           buffer_size: response.data['buffer_size'],
@@ -101,14 +107,13 @@ class SpamRepository {
 
   Future<RetrainResult> getModelStatus() async {
     try {
-      final response = await dio.get(Api.baseUrl + '/retrain/spam/retrain');
+      final response = await dio.get(Api.newurl + '/retrain/spam/retrain');
 
       if (response.statusCode == 200) {
         return RetrainResult(
           status: response.data['status'],
           samples_used: response.data['samples_used'],
         );
-
       } else {
         throw Exception('Failed to get model status: ${response.statusCode}');
       }
@@ -117,33 +122,63 @@ class SpamRepository {
     }
   }
 
-
-    Future<SpamResponse> checkSpamMicro(File audiofile) async {
+  Future<SpamResponse> checkSpamMicro(File audiofile) async {
     try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          // <-- было 'audio', стало 'file'
+          audiofile.path,
+          filename: audiofile.path.split('/').last, // <-- добавьте filename
+          contentType: DioMediaType.parse(
+            audiofile.path.endsWith('.wav')
+                ? 'audio/wav'
+                : audiofile.path.endsWith('.m4a')
+                ? 'audio/mp4'
+                : 'audio/mpeg',
+          ),
+        ),
+      });
 
-
-
-       final response = await dio.post(
+      final response = await dio.post(
         Api.baseUrl + '/file/toText',
-        data: {'audio': audiofile},
+        data: formData,
         options: Options(
           connectTimeout: const Duration(seconds: 360),
           receiveTimeout: const Duration(seconds: 360),
           sendTimeout: const Duration(seconds: 360),
         ),
-
       );
 
-      final checkspam  =  await dio.post(
-        Api.baseUrl + '/check/spam',
-        data: {'text': response},
+      print('=== /file/toText RESPONSE ===');
+      print('Status: ${response.statusCode}');
+      print('Data type: ${response.data.runtimeType}');
+      print('Data: ${response.data}'); // <-- что вернул сервер
+
+      String textToCheck;
+      if (response.data is Map && response.data['text'] != null) {
+        textToCheck = response.data['text'].toString().trim();
+      } else if (response.data is String) {
+        textToCheck = (response.data as String).trim();
+      } else {
+        throw Exception('Unexpected format: ${response.data}');
+      }
+
+      print('=== SENDING TO /check/spam ===');
+      print('textToCheck: "$textToCheck"'); // <-- что отправляем
+
+      if (textToCheck.isEmpty) {
+        throw Exception('Empty text from audio');
+      }
+
+      final checkspam = await dio.post(
+        Api.newurl + '/check/spam',
+        data: {'text': textToCheck},
         options: Options(
           connectTimeout: const Duration(seconds: 120),
           receiveTimeout: const Duration(seconds: 120),
           sendTimeout: const Duration(seconds: 120),
         ),
       );
-      
 
       if (checkspam.statusCode == 200) {
         return SpamResponse(
@@ -156,14 +191,15 @@ class SpamRepository {
       } else {
         throw Exception('Failed to check spam: ${checkspam.statusCode}');
       }
+    } on DioException catch (e) {
+      print('=== DioException ===');
+      print('URL: ${e.requestOptions.path}');
+      print('Status: ${e.response?.statusCode}');
+      print('Response body: ${e.response?.data}'); // <-- ГЛАВНОЕ
+      print('Request data: ${e.requestOptions.data}');
+      rethrow;
     } catch (e) {
-      print('Detailed error: $e');
-      print('Backend URL: ${Api.baseUrl}');
       throw Exception('Error checking spam: $e');
     }
   }
-
-
-
-  
 }

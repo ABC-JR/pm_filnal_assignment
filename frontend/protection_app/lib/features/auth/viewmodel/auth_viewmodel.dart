@@ -57,6 +57,9 @@ class AuthViewmodel extends _$AuthViewmodel {
 
     print('testing token: ${user.token}');
     _authLocalRepository.setToken(user.token);
+    _authLocalRepository.setUser(user);
+
+    
     ref.read(currentUserNotifierProvider.notifier).addUser(user);
     state = AsyncValue.data(user);
     return state;

@@ -17,7 +17,7 @@ app.include_router(auth.router ,prefix="/auth")
 
 app.include_router(cheker.router , prefix="/check")
 
-# app.include_router(retrain.router  , prefix="/retrain")
+app.include_router(retrain.router  , prefix="/retrain")
 app.include_router(file.router  , prefix="/file")
 
 app.add_middleware(
