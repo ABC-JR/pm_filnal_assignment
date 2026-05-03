@@ -33,7 +33,7 @@ src/        # Core source code
 
 ## Screenshots
 
-![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/first.jpg)
+![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/tree/main/screen/first.jpg)
 ![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/second.jpg)
 ![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/third.jpg)
 ![App Screenshot](https://github.com/ABC-JR/pm_filnal_assignment/edit/main/screen/foruth.jpg)
